@@ -202,10 +202,14 @@ function mostrar(doc, k){
     filas.push(["Anulado el", fmtISO(doc.anulado.fecha)]);
     if(doc.anulado.motivo) filas.push(["Motivo", doc.anulado.motivo]);
   }
-  (doc.desglose||[]).forEach(([a,v]) => filas.push([a, money(v)]));
+  const opc = Array.isArray(doc.opciones) && doc.opciones.length > 1;   // cotización con opción A / B
+  if(opc){ filas.push(["Opciones cotizadas", String(doc.opciones.length)]);
+    doc.opciones.forEach(o => filas.push(["Opción " + o.letra + " · " + (o.titulo||"") + (doc.aprobada===o.letra ? " ✓ aprobada" : ""), money(o.total)])); }
+  else (doc.desglose||[]).forEach(([a,v]) => filas.push([a, money(v)]));
   let html = '<div class="details">' +
     filas.map(([a,v]) => '<div class="row"><span>'+esc(a)+'</span><b>'+esc(v)+'</b></div>').join("") +
-    (inf ? '' : '<div class="row total"><span>'+(ec ? 'Saldo pendiente' : 'Total')+'</span><b>'+money(doc.total)+'</b></div>') +
+    (inf || (opc && !doc.aprobada) ? '' : '<div class="row total"><span>'+(ec ? 'Saldo pendiente' : opc ? 'Total (opción ' + esc(doc.aprobada) + ')' : 'Total')+'</span><b>'+money(doc.total)+'</b></div>') +
+    (opc && !doc.aprobada ? '<p class="note" style="margin:8px 0 0">Esta cotización presenta varias opciones para el mismo trabajo: se paga solo la opción elegida.</p>' : '') +
     (doc.saldo!=null ? '<div class="row"><span>Saldo pendiente</span><b>'+money(doc.saldo)+'</b></div>' : '') + '</div>';
   if(doc.anulado) html += '<p class="note" style="color:#b91c1c;font-weight:700">Este documento fue anulado por Grupo Σ LEAN y no tiene validez.</p>';
   if(doc.pdf && !doc.anulado){
